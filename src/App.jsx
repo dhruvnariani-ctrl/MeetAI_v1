@@ -1,0 +1,32 @@
+import { Route, Routes } from 'react-router-dom'
+import AppLayout from './layout/AppLayout'
+import Dashboard from './pages/Dashboard'
+import CalendarPage from './pages/CalendarPage'
+import RecordedMeetings from './pages/RecordedMeetings'
+import MyTasks from './pages/MyTasks'
+import UpcomingMeetings from './pages/UpcomingMeetings'
+import NotFound from './pages/NotFound'
+import MeetingDetails from './pages/MeetingDetails'
+import HowItWorks from './pages/HowItWorks'
+import TourRunner from './components/TourRunner'
+// Header + sidebar live in AppLayout and stay put; only the page inside <Outlet /> changes.
+export default function App() {
+  return (
+    <>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="calendar" element={<CalendarPage />} />
+        <Route path="recorded" element={<RecordedMeetings />} />
+        <Route path="tasks" element={<MyTasks />} />
+        <Route path="/meetings/:meetingId" element={<MeetingDetails />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        {/* Not in the sidebar any more; reached from "View all meetings" on the dashboard */}
+        <Route path="upcoming" element={<UpcomingMeetings />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+    <TourRunner />
+    </>
+  )
+}

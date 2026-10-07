@@ -1,0 +1,6 @@
+/* REPLACE the whole Vite-generated index.css with this.
+   The default one sets `#root { width: 1126px; text-align: center; border-inline: ... }`,
+   which is what centres the text and cuts the layout short. */
+:root { color-scheme: light; }
+html, body, #root { height: 100%; margin: 0; }
+#root { width: 100%; max-width: none; border: 0; text-align: left; display: block; }
