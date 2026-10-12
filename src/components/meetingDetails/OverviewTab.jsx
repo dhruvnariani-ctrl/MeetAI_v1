@@ -8,10 +8,9 @@ import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined'
 
 import {
-  formatDate,
   formatTimeRange,
 } from './utils'
-
+import {formatDate} from '../../utils/time'
 import { NotReadyMessage } from './ui'
 
 export default function OverviewTab({

@@ -12,13 +12,11 @@ import Tooltip from '@mui/material/Tooltip'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import { visuallyHidden } from '@mui/utils'
-
+import { formatTime } from '../utils/time'
 import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined'
-// import PlayCircleOutlinedIcon from '@mui/icons-material/PlayCircleOutlined'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined'
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined'
-// import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined'
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined'
 import SyncIcon from '@mui/icons-material/Sync'
 import HelpOutlinedIcon from '@mui/icons-material/HelpOutlined'
@@ -74,12 +72,6 @@ const HEADER_H = 56
 
 const bg =
   'linear-gradient(180deg, #e6f0fc 0%, #edf4fd 60%, #f4f8fe 100%)'
-
-const formatTime = (d) =>
-  new Intl.DateTimeFormat([], {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(d)
 
 function SidebarAction({
   Icon,
@@ -145,7 +137,6 @@ function SidebarContent({
   onToggle,
   lastSynced,
   onSync,
-  onHelp,
 }) {
   const { pathname } = useLocation()
 
@@ -413,7 +404,6 @@ export default function Sidebar({
   onInstantJoin,
   lastSynced,
   onSync,
-  onHelp,
 }) {
   const theme = useTheme()
 
@@ -428,7 +418,6 @@ export default function Sidebar({
     onInstantJoin,
     lastSynced,
     onSync,
-    onHelp,
   }
 
   /* =====================================================

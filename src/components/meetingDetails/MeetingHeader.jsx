@@ -12,6 +12,7 @@ import MeetingStatusArea from './MeetingStatusArea'
 export default function MeetingHeader({
   meeting,
   meetingState,
+  meetAIInvited,
   dateText,
   timeText,
   durationMinutes,
@@ -77,18 +78,20 @@ export default function MeetingHeader({
 
               <Typography
                 sx={{
-                  mt: .75,
+                  mt: 0.75,
                   fontSize: '.8rem',
                   color: '#66778d',
                 }}
               >
-                {meeting.platform || 'Meeting'} · {dateText}
+                {meeting.platform || 'Meeting'} ·{' '}
+                {dateText}
               </Typography>
             </Box>
 
             <MeetingStatusArea
               meeting={meeting}
               state={meetingState}
+              meetAIInvited={meetAIInvited}
             />
           </Stack>
 
@@ -104,21 +107,27 @@ export default function MeetingHeader({
             }}
           >
             <Info
-              icon={<CalendarMonthOutlinedIcon />}
+              icon={
+                <CalendarMonthOutlinedIcon />
+              }
               label="Date & time"
               value={timeText}
               secondary={dateText}
             />
 
             <Info
-              icon={<AccessTimeOutlinedIcon />}
+              icon={
+                <AccessTimeOutlinedIcon />
+              }
               label="Duration"
               value={`${durationMinutes} minutes`}
               secondary="Scheduled meeting length"
             />
 
             <Info
-              icon={<GroupsOutlinedIcon />}
+              icon={
+                <GroupsOutlinedIcon />
+              }
               label="People invited"
               value={`${participantCount} ${
                 participantCount === 1
@@ -152,7 +161,7 @@ function Info({
     >
       <Stack
         direction="row"
-        spacing={.8}
+        spacing={0.8}
         alignItems="center"
       >
         <Box
@@ -181,7 +190,7 @@ function Info({
 
       <Typography
         sx={{
-          mt: .65,
+          mt: 0.65,
           fontSize: '.8rem',
           fontWeight: 700,
           color: '#24364d',
@@ -193,7 +202,7 @@ function Info({
 
       <Typography
         sx={{
-          mt: .25,
+          mt: 0.25,
           fontSize: '.65rem',
           color: '#8997a8',
         }}

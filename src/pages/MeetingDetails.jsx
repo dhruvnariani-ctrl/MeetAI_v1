@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
 import {
-  useLocation,
+  useEffect,
+  useState,
+} from 'react'
+
+import {
   useNavigate,
+  useParams,
   useSearchParams,
 } from 'react-router-dom'
 
@@ -19,10 +23,8 @@ import {
   getAttendance,
   getDurationMinutes,
   formatTimeRange,
-  formatDate,
-  getMeetingIdFromPath,
 } from '../components/meetingDetails/utils'
-
+import {formatDate} from '../utils/time'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
@@ -39,7 +41,8 @@ import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 
 import usePageTitle from '../hooks/usePageTitle'
 
-import { getTodaysMeetings } from '../data/Dashboard'
+import { getMeetingById } from '../data/meetings'
+import { getMeetingSettings } from '../data/meetingSettings'
 
 const VALID_TABS = [
   'overview',
@@ -48,10 +51,17 @@ const VALID_TABS = [
   'actions',
 ]
 
-function getTabFromSearchParams(searchParams) {
-  const requestedTab = searchParams.get('tab')
+function getTabFromSearchParams(
+  searchParams,
+) {
+  const requestedTab =
+    searchParams.get('tab')
 
-  if (VALID_TABS.includes(requestedTab)) {
+  if (
+    VALID_TABS.includes(
+      requestedTab,
+    )
+  ) {
     return requestedTab
   }
 
@@ -62,95 +72,53 @@ export default function MeetingDetails() {
   usePageTitle('Meeting Details')
 
   const navigate = useNavigate()
-  const location = useLocation()
 
-  const [searchParams, setSearchParams] =
-    useSearchParams()
+  const { meetingId } =
+    useParams()
 
-  const [now, setNow] = useState(
-    () => new Date(),
-  )
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams()
 
-  const [activeTab, setActiveTab] = useState(
-    () => getTabFromSearchParams(searchParams),
-  )
+  const [now, setNow] =
+    useState(() => new Date())
 
-  const meeting = location.state?.meeting
-
-  const meetingId =
-    location.state?.meetingId ||
-    getMeetingIdFromPath(location.pathname)
-
-  const resolvedMeeting = useMemo(() => {
-    if (meeting) {
-      return meeting
-    }
-
-    if (!meetingId) {
-      return null
-    }
-
-    const meetings = getTodaysMeetings()
-
-    return meetings.find(
-      (item) =>
-        String(item.id) === String(meetingId),
+  const [activeTab, setActiveTab] =
+    useState(() =>
+      getTabFromSearchParams(
+        searchParams,
+      ),
     )
-  }, [meeting, meetingId])
 
   /*
-   * Keep the active tab synchronized with the
-   * ?tab= query parameter.
+   * The URL is the single source of truth.
    *
-   * This is what allows links such as:
+   * /meetings/:meetingId
    *
-   * /meetings/123?tab=recording
-   * /meetings/123?tab=transcript
-   * /meetings/123?tab=actions
+   * No meeting object is read from
+   * navigation state.
    */
+  const resolvedMeeting =
+    getMeetingById(meetingId)
+
   useEffect(() => {
     const requestedTab =
-      getTabFromSearchParams(searchParams)
+      getTabFromSearchParams(
+        searchParams,
+      )
 
     setActiveTab(requestedTab)
   }, [searchParams])
 
-  /*
-   * Keep the current time updated so meeting status
-   * can change while the page is open.
-   */
   useEffect(() => {
     const timer = setInterval(() => {
       setNow(new Date())
     }, 30000)
 
-    return () => clearInterval(timer)
+    return () =>
+      clearInterval(timer)
   }, [])
-
-  /*
-   * Change the active tab and keep the URL in sync.
-   */
-  const handleTabChange = (_, value) => {
-    if (!VALID_TABS.includes(value)) {
-      return
-    }
-
-    setActiveTab(value)
-
-    setSearchParams(
-      (currentParams) => {
-        const nextParams =
-          new URLSearchParams(currentParams)
-
-        nextParams.set('tab', value)
-
-        return nextParams
-      },
-      {
-        replace: true,
-      },
-    )
-  }
 
   if (!resolvedMeeting) {
     return (
@@ -161,7 +129,8 @@ export default function MeetingDetails() {
         <Paper
           elevation={0}
           sx={{
-            border: '1px solid #dce3eb',
+            border:
+              '1px solid #dce3eb',
             borderRadius: 3,
             p: 3,
           }}
@@ -173,8 +142,9 @@ export default function MeetingDetails() {
               mb: 2,
             }}
           >
-            The meeting may have been removed or is
-            no longer available.
+            The meeting may have been
+            removed or is no longer
+            available.
           </Typography>
 
           <Button
@@ -182,7 +152,9 @@ export default function MeetingDetails() {
             startIcon={
               <ArrowBackOutlinedIcon />
             }
-            onClick={() => navigate(-1)}
+            onClick={() =>
+              navigate(-1)
+            }
             sx={{
               textTransform: 'none',
               borderRadius: 2,
@@ -195,38 +167,114 @@ export default function MeetingDetails() {
     )
   }
 
-  const meetingState = getMeetingState(
-    resolvedMeeting,
-    now,
-  )
+  const meetingState =
+    getMeetingState(
+      resolvedMeeting,
+      now,
+    )
+
+  /*
+   * --------------------------------------------------------------------------
+   * MeetAI setting
+   * --------------------------------------------------------------------------
+   *
+   * The saved localStorage value is the source of truth
+   * when a user has changed this meeting's setting.
+   *
+   * Important:
+   *
+   *   false !== undefined
+   *
+   * So a saved false will NOT fall back to the original
+   * meeting.meetAI.invited value.
+   */
+
+  const savedSettings =
+    getMeetingSettings()
+
+  const savedMeetingSettings =
+    savedSettings?.[
+      resolvedMeeting.id
+    ]
+
+  const meetAIInvited =
+    savedMeetingSettings?.autoJoin !==
+    undefined
+      ? savedMeetingSettings.autoJoin ===
+        true
+      : resolvedMeeting?.meetAI
+          ?.invited === true
 
   const participants =
     resolvedMeeting.participants || []
 
-  const attendance = getAttendance(
-    resolvedMeeting,
-    participants,
-  )
+  const attendance =
+    getAttendance(
+      resolvedMeeting,
+      participants,
+    )
 
   const durationMinutes =
-    getDurationMinutes(resolvedMeeting)
+    getDurationMinutes(
+      resolvedMeeting,
+    )
 
-  const timeText = formatTimeRange(
-    resolvedMeeting.start,
-    resolvedMeeting.end,
-  )
+  const timeText =
+    formatTimeRange(
+      resolvedMeeting.start,
+      resolvedMeeting.end,
+    )
 
-  const dateText = formatDate(
-    resolvedMeeting.start,
-  )
+  const dateText =
+    formatDate(
+      resolvedMeeting.start,
+    )
+
+  const handleTabChange = (
+    _,
+    value,
+  ) => {
+    if (
+      !VALID_TABS.includes(
+        value,
+      )
+    ) {
+      return
+    }
+
+    setActiveTab(value)
+
+    setSearchParams(
+      (currentParams) => {
+        const nextParams =
+          new URLSearchParams(
+            currentParams,
+          )
+
+        nextParams.set(
+          'tab',
+          value,
+        )
+
+        return nextParams
+      },
+      {
+        replace: true,
+      },
+    )
+  }
 
   return (
     <PageShell
       title=""
       subtitle=""
     >
-      <Stack spacing={{ xs: 1.75, md: 2.25 }}>
-
+      <Stack
+        spacing={{
+          xs: 1.75,
+          md: 2.25,
+        }}
+      >
         {/* ---------------------------------------------------------- */}
         {/* BACK                                                       */}
         {/* ---------------------------------------------------------- */}
@@ -235,16 +283,22 @@ export default function MeetingDetails() {
           startIcon={
             <ArrowBackOutlinedIcon />
           }
-          onClick={() => navigate(-1)}
+          onClick={() =>
+            navigate(-1)
+          }
           sx={{
-            alignSelf: 'flex-start',
-            textTransform: 'none',
+            alignSelf:
+              'flex-start',
+            textTransform:
+              'none',
             fontSize: '.78rem',
             color: '#52657d',
             px: 0,
             '&:hover': {
-              bgcolor: 'transparent',
-              color: 'primary.main',
+              bgcolor:
+                'transparent',
+              color:
+                'primary.main',
             },
           }}
         >
@@ -257,22 +311,41 @@ export default function MeetingDetails() {
 
         <Box data-tour="meeting-header">
           <MeetingHeader
-            meeting={resolvedMeeting}
-            meetingState={meetingState}
-            dateText={dateText}
-            timeText={timeText}
-            durationMinutes={durationMinutes}
+            meeting={
+              resolvedMeeting
+            }
+            meetingState={
+              meetingState
+            }
+            meetAIInvited={
+              meetAIInvited
+            }
+            dateText={
+              dateText
+            }
+            timeText={
+              timeText
+            }
+            durationMinutes={
+              durationMinutes
+            }
           />
         </Box>
 
         {/* ---------------------------------------------------------- */}
-        {/* PARTICIPANTS - OUTSIDE TABS                                */}
+        {/* PARTICIPANTS                                                */}
         {/* ---------------------------------------------------------- */}
 
-        <Box data-tour="meeting-participants">
+        <Box
+          data-tour="meeting-participants"
+        >
           <ParticipantsPreview
-            attendance={attendance}
-            meeting={resolvedMeeting}
+            attendance={
+              attendance
+            }
+            meeting={
+              resolvedMeeting
+            }
           />
         </Box>
 
@@ -283,7 +356,8 @@ export default function MeetingDetails() {
         <Paper
           elevation={0}
           sx={{
-            border: '1px solid #dce3eb',
+            border:
+              '1px solid #dce3eb',
             borderRadius: 2.5,
             bgcolor: '#fff',
             overflow: 'hidden',
@@ -291,7 +365,9 @@ export default function MeetingDetails() {
         >
           <Tabs
             value={activeTab}
-            onChange={handleTabChange}
+            onChange={
+              handleTabChange
+            }
             variant="scrollable"
             scrollButtons={false}
             sx={{
@@ -307,28 +383,33 @@ export default function MeetingDetails() {
                   xs: 105,
                   sm: 125,
                 },
-                textTransform: 'none',
+                textTransform:
+                  'none',
                 fontSize: '.78rem',
                 fontWeight: 600,
                 color: '#66778d',
               },
 
               '& .Mui-selected': {
-                color: 'primary.main',
+                color:
+                  'primary.main',
               },
 
-              '& .MuiTabs-indicator': {
-                height: 3,
-                borderRadius:
-                  '3px 3px 0 0',
-              },
+              '& .MuiTabs-indicator':
+                {
+                  height: 3,
+                  borderRadius:
+                    '3px 3px 0 0',
+                },
             }}
           >
             <Tab
               value="overview"
               icon={
                 <CalendarMonthOutlinedIcon
-                  sx={{ fontSize: 18 }}
+                  sx={{
+                    fontSize: 18,
+                  }}
                 />
               }
               iconPosition="start"
@@ -339,7 +420,9 @@ export default function MeetingDetails() {
               value="recording"
               icon={
                 <PlayArrowOutlinedIcon
-                  sx={{ fontSize: 18 }}
+                  sx={{
+                    fontSize: 18,
+                  }}
                 />
               }
               iconPosition="start"
@@ -350,7 +433,9 @@ export default function MeetingDetails() {
               value="transcript"
               icon={
                 <DescriptionOutlinedIcon
-                  sx={{ fontSize: 18 }}
+                  sx={{
+                    fontSize: 18,
+                  }}
                 />
               }
               iconPosition="start"
@@ -361,7 +446,9 @@ export default function MeetingDetails() {
               value="actions"
               icon={
                 <TaskAltOutlinedIcon
-                  sx={{ fontSize: 18 }}
+                  sx={{
+                    fontSize: 18,
+                  }}
                 />
               }
               iconPosition="start"
@@ -374,12 +461,21 @@ export default function MeetingDetails() {
         {/* TAB CONTENT                                                 */}
         {/* ---------------------------------------------------------- */}
 
-        {activeTab === 'overview' && (
-          <Box data-tour="meeting-content">
+        {activeTab ===
+          'overview' && (
+          <Box
+            data-tour="meeting-content"
+          >
             <OverviewTab
-              meeting={resolvedMeeting}
-              meetingState={meetingState}
-              attendance={attendance}
+              meeting={
+                resolvedMeeting
+              }
+              meetingState={
+                meetingState
+              }
+              attendance={
+                attendance
+              }
               durationMinutes={
                 durationMinutes
               }
@@ -387,24 +483,39 @@ export default function MeetingDetails() {
           </Box>
         )}
 
-        {activeTab === 'recording' && (
+        {activeTab ===
+          'recording' && (
           <RecordingTab
-            meeting={resolvedMeeting}
-            meetingState={meetingState}
+            meeting={
+              resolvedMeeting
+            }
+            meetingState={
+              meetingState
+            }
           />
         )}
 
-        {activeTab === 'transcript' && (
+        {activeTab ===
+          'transcript' && (
           <TranscriptTab
-            meeting={resolvedMeeting}
-            meetingState={meetingState}
+            meeting={
+              resolvedMeeting
+            }
+            meetingState={
+              meetingState
+            }
           />
         )}
 
-        {activeTab === 'actions' && (
+        {activeTab ===
+          'actions' && (
           <ActionItemsTab
-            meeting={resolvedMeeting}
-            meetingState={meetingState}
+            meeting={
+              resolvedMeeting
+            }
+            meetingState={
+              meetingState
+            }
           />
         )}
       </Stack>

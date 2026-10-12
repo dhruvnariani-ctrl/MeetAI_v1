@@ -2,7 +2,6 @@ import { useState } from 'react'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import ButtonGroup from '@mui/material/ButtonGroup'
 import IconButton from '@mui/material/IconButton'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
@@ -15,6 +14,7 @@ import TodayOutlinedIcon from '@mui/icons-material/TodayOutlined'
 import AddIcon from '@mui/icons-material/Add'
 
 import InviteSwitch from '../InviteSwitch'
+import SlidingSegmented from '../SlidingSegmented'
 
 const buttonSx = {
   minWidth: 145,
@@ -51,91 +51,71 @@ export default function CalendarToolbar({
   onToday,
   onYesterday,
   onTomorrow,
+  onCurrentPeriod,
   selectedDateLabel = 'Today',
 
-  /*
-   * Current meetings visible in the calendar.
-   *
-   * These are used to calculate the overall
-   * Invite MeetAI switch.
-   */
-  meetings = [],
+  autoJoin = false,
 
-  /*
-   * Calendar settings.
-   *
-   * Local settings take priority over
-   * meeting.meetAI.invited.
-   */
-  settings = {},
-
-  /*
-   * Called when the overall Invite MeetAI
-   * switch is changed.
-   *
-   * Expected:
-   *
-   * onAutoJoinChange(meetingId, {
-   *   autoJoin: true
-   * })
-   */
   onAutoJoinChange,
 
-  // Opens the Create event dialog.
   onNewMeeting,
 }) {
-  const [anchorEl, setAnchorEl] =
-    useState(null)
+  const [anchorEl, setAnchorEl] = useState(null)
 
-  const quickActions = [
-    {
-      label: 'Today',
-      action: onToday,
-    },
-    {
-      label: 'Yesterday',
-      action: onYesterday,
-    },
-    {
-      label: 'Tomorrow',
-      action: onTomorrow,
-    },
-  ]
+  const menuOpen = Boolean(anchorEl)
 
-  /*
-   * Overall Invite MeetAI state.
-   *
-   * ON when every currently displayed
-   * calendar meeting has MeetAI invited.
-   *
-   * Local settings take priority.
-   */
-  const allMeetingsHaveMeetAI =
-    meetings.length > 0 &&
-    meetings.every((meeting) => {
-      return (
-        settings?.[meeting.id]?.autoJoin ??
-        meeting?.meetAI?.invited ??
-        false
-      )
-    })
-
-  /*
-   * Turn MeetAI on/off for every meeting
-   * currently supplied to the toolbar.
-   */
-  const handleOverallMeetAIToggle = (
-    checked,
-  ) => {
-    meetings.forEach((meeting) => {
-      onAutoJoinChange?.(
-        meeting.id,
+  const getDateActions = () => {
+    if (view === 'week') {
+      return [
         {
-          autoJoin: checked,
+          label: 'This week',
+          action: onCurrentPeriod,
         },
-      )
-    })
+        {
+          label: 'Last week',
+          action: onPrevious,
+        },
+        {
+          label: 'Next week',
+          action: onNext,
+        },
+      ]
+    }
+
+    if (view === 'month') {
+      return [
+        {
+          label: 'This month',
+          action: onCurrentPeriod,
+        },
+        {
+          label: 'Last month',
+          action: onPrevious,
+        },
+        {
+          label: 'Next month',
+          action: onNext,
+        },
+      ]
+    }
+
+    return [
+      {
+        label: 'Today',
+        action: onToday,
+      },
+      {
+        label: 'Yesterday',
+        action: onYesterday,
+      },
+      {
+        label: 'Tomorrow',
+        action: onTomorrow,
+      },
+    ]
   }
+
+  const quickActions = getDateActions()
 
   const handleQuickAction = (item) => {
     setAnchorEl(null)
@@ -159,9 +139,9 @@ export default function CalendarToolbar({
         mb: 2.5,
       }}
     >
-      {/* ================================================================ */}
-      {/* DATE DROPDOWN                                                    */}
-      {/* ================================================================ */}
+      {/* ============================================================ */}
+      {/* DATE DROPDOWN                                                 */}
+      {/* ============================================================ */}
 
       <Stack
         direction="row"
@@ -186,9 +166,7 @@ export default function CalendarToolbar({
             />
           }
           onClick={(event) =>
-            setAnchorEl(
-              event.currentTarget,
-            )
+            setAnchorEl(event.currentTarget)
           }
           sx={buttonSx}
         >
@@ -197,40 +175,32 @@ export default function CalendarToolbar({
 
         <Menu
           anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={() =>
-            setAnchorEl(null)
-          }
+          open={menuOpen}
+          onClose={() => setAnchorEl(null)}
           MenuListProps={{
-            'aria-label':
-              'Choose date',
+            'aria-label': 'Choose date',
           }}
         >
-          {quickActions.map(
-            (item) => (
-              <MenuItem
-                key={item.label}
-                onClick={() =>
-                  handleQuickAction(
-                    item,
-                  )
-                }
-                sx={{
-                  minWidth: 150,
-                  fontSize:
-                    '0.9rem',
-                }}
-              >
-                {item.label}
-              </MenuItem>
-            ),
-          )}
+          {quickActions.map((item) => (
+            <MenuItem
+              key={item.label}
+              onClick={() =>
+                handleQuickAction(item)
+              }
+              sx={{
+                minWidth: 150,
+                fontSize: '0.9rem',
+              }}
+            >
+              {item.label}
+            </MenuItem>
+          ))}
         </Menu>
       </Stack>
 
-      {/* ================================================================ */}
-      {/* CENTER CONTROLS                                                  */}
-      {/* ================================================================ */}
+      {/* ============================================================ */}
+      {/* CENTER CONTROLS                                               */}
+      {/* ============================================================ */}
 
       <Stack
         direction="row"
@@ -240,145 +210,40 @@ export default function CalendarToolbar({
       >
         <IconButton
           size="small"
+          data-tour="calendar-previous"
           onClick={onPrevious}
           aria-label={`Previous ${view}`}
         >
-          <ChevronLeftIcon
-            fontSize="small"
-          />
+          <ChevronLeftIcon fontSize="small" />
         </IconButton>
 
         <IconButton
           size="small"
+          data-tour="calendar-next"
           onClick={onNext}
           aria-label={`Next ${view}`}
         >
-          <ChevronRightIcon
-            fontSize="small"
-          />
+          <ChevronRightIcon fontSize="small" />
         </IconButton>
 
-       <Box
-  data-tour="calendar-view"
-  sx={{
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.35,
-    ml: 0.75,
-    p: 0.35,
-    borderRadius: 1.75,
-    bgcolor: '#f5f7fa',
-    flexShrink: 0,
-  }}
->
-  {/* Animated selected background */}
-  <Box
-    sx={{
-      position: 'absolute',
-      top: 3,
-      left: 3,
-
-      width: 55,
-      height: 30,
-
-      borderRadius: 1.35,
-
-      bgcolor: '#0d68c9',
-
-      boxShadow:
-        '0 2px 6px rgba(13, 104, 201, 0.22)',
-
-      transform: `translateX(${
-        VIEWS.findIndex(
-          ({ value }) => value === view,
-        ) * 57
-      }px)`,
-
-      transition:
-        'transform 220ms cubic-bezier(0.4, 0, 0.2, 1)',
-
-      pointerEvents: 'none',
-      zIndex: 0,
-    }}
-  />
-
-  {VIEWS.map(({ value, label }) => {
-    const selected = view === value
-
-    return (
-      <Button
-        key={value}
-        disableRipple
-        onClick={() => onViewChange(value)}
-        sx={{
-          position: 'relative',
-          zIndex: 1,
-
-          minWidth: 55,
-          width: 55,
-          height: 30,
-
-          px: 1,
-
-          py: 0,
-
-          border: 'none',
-          borderRadius: 1.35,
-
-          textTransform: 'none',
-
-          fontSize: '0.75rem',
-
-          fontWeight: selected
-            ? 600
-            : 500,
-
-          color: selected
-            ? '#fff'
-            : '#52657d',
-
-          bgcolor: 'transparent',
-
-          transition:
-            'color 180ms ease',
-
-          '&:hover': {
-            bgcolor: 'transparent',
-
-            color: selected
-              ? '#fff'
-              : '#243b5a',
-          },
-
-          '&:focus': {
-            bgcolor: 'transparent',
-          },
-
-          '&:focus-visible': {
-            outline:
-              '2px solid rgba(13, 104, 201, 0.35)',
-            outlineOffset: 1,
-          },
-        }}
-      >
-        {label}
-      </Button>
-    )
-  })}
-</Box>
+        <SlidingSegmented
+          dataTour="calendar-view"
+          value={view}
+          onChange={onViewChange}
+          options={VIEWS}
+          ariaLabel="Calendar view"
+          size="compact"
+        />
       </Stack>
 
-      {/* ================================================================ */}
-      {/* INVITE MEETAI + NEW MEETING                                      */}
-      {/* ================================================================ */}
+      {/* ============================================================ */}
+      {/* INVITE MEETAI + NEW MEETING                                   */}
+      {/* ============================================================ */}
 
       <Box
         sx={{
           display: 'flex',
-
           alignItems: 'center',
-
           justifyContent: {
             xs: 'flex-start',
             md: 'flex-end',
@@ -389,19 +254,14 @@ export default function CalendarToolbar({
           data-tour="invite-meetai"
           sx={{
             mr: 2,
-            fontSize:
-              '0.78rem',
+            fontSize: '0.78rem',
             fontWeight: 600,
             p: '4px',
           }}
         >
           <InviteSwitch
-            checked={
-              allMeetingsHaveMeetAI
-            }
-            onChange={
-              handleOverallMeetAIToggle
-            }
+            checked={autoJoin}
+            onChange={onAutoJoinChange}
           />
         </Box>
 
@@ -409,15 +269,11 @@ export default function CalendarToolbar({
           data-tour="new-meeting"
           size="small"
           variant="contained"
-          startIcon={
-            <AddIcon />
-          }
+          startIcon={<AddIcon />}
           onClick={onNewMeeting}
           sx={{
-            textTransform:
-              'none',
-            fontSize:
-              '0.78rem',
+            textTransform: 'none',
+            fontSize: '0.78rem',
             fontWeight: 600,
           }}
         >

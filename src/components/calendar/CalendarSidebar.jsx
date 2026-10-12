@@ -14,7 +14,9 @@ import TodayOutlinedIcon from '@mui/icons-material/TodayOutlined'
 const pad = (value) => String(value).padStart(2, '0')
 
 const dateKey = (date) =>
-  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}`
 
 function startOfWeek(date) {
   const result = new Date(date)
@@ -41,7 +43,7 @@ function isInSelectedWeek(date, selectedDate) {
 export default function CalendarSidebar({
   selectedDate,
   view,
-  meetings,
+  meetings = [],
   onSelectDate,
 }) {
   const [displayMonth, setDisplayMonth] = useState(
@@ -49,8 +51,8 @@ export default function CalendarSidebar({
       new Date(
         selectedDate.getFullYear(),
         selectedDate.getMonth(),
-        1
-      )
+        1,
+      ),
   )
 
   useEffect(() => {
@@ -58,8 +60,8 @@ export default function CalendarSidebar({
       new Date(
         selectedDate.getFullYear(),
         selectedDate.getMonth(),
-        1
-      )
+        1,
+      ),
     )
   }, [selectedDate])
 
@@ -67,10 +69,11 @@ export default function CalendarSidebar({
   const month = displayMonth.getMonth()
 
   const firstDay = new Date(year, month, 1).getDay()
+
   const daysInMonth = new Date(
     year,
     month + 1,
-    0
+    0,
   ).getDate()
 
   const cells = []
@@ -91,13 +94,13 @@ export default function CalendarSidebar({
 
   const previousMonth = () => {
     setDisplayMonth(
-      new Date(year, month - 1, 1)
+      new Date(year, month - 1, 1),
     )
   }
 
   const nextMonth = () => {
     setDisplayMonth(
-      new Date(year, month + 1, 1)
+      new Date(year, month + 1, 1),
     )
   }
 
@@ -108,8 +111,8 @@ export default function CalendarSidebar({
       new Date(
         today.getFullYear(),
         today.getMonth(),
-        1
-      )
+        1,
+      ),
     )
 
     onSelectDate(today)
@@ -126,78 +129,59 @@ export default function CalendarSidebar({
       }}
     >
       <Stack
-  direction="row"
-  alignItems="center"
-  sx={{
-    width: '100%',
-    mb: 1.25,
-  }}
->
-  {/* Left arrow */}
-  <Box
-    sx={{
-      flex: 1,
-      display: 'flex',
-      justifyContent: 'flex-start',
-    }}
-  >
-    <IconButton
-      size="small"
-      onClick={() =>
-        setDisplayMonth(
-          new Date(
-            displayMonth.getFullYear(),
-            displayMonth.getMonth() - 1,
-            1
-          )
-        )
-      }
-      aria-label="Previous month"
-    >
-      <ChevronLeftIcon fontSize="small" />
-    </IconButton>
-  </Box>
+        direction="row"
+        alignItems="center"
+        sx={{
+          width: '100%',
+          mb: 1.25,
+        }}
+      >
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'flex-start',
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={previousMonth}
+            aria-label="Previous month"
+          >
+            <ChevronLeftIcon fontSize="small" />
+          </IconButton>
+        </Box>
 
-  {/* Center month */}
-  <Typography
-    fontWeight={500}
-    fontSize="0.95rem"
-    sx={{
-      textAlign: 'center',
-      whiteSpace: 'nowrap',
-    }}
-  >
-    {new Intl.DateTimeFormat('en', {
-      month: 'long',
-      year: 'numeric',
-    }).format(displayMonth)}
-  </Typography>
+        <Typography
+          fontWeight={500}
+          fontSize="0.95rem"
+          sx={{
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {new Intl.DateTimeFormat('en', {
+            month: 'long',
+            year: 'numeric',
+          }).format(displayMonth)}
+        </Typography>
 
-  {/* Right arrow */}
-  <Box
-    sx={{
-      flex: 1,
-      display: 'flex',
-      justifyContent: 'flex-end',
-    }}
-  >
-    <IconButton
-      size="small"
-      onClick={() =>
-        setDisplayMonth(
-          new Date(
-            displayMonth.getFullYear(),
-            displayMonth.getMonth() + 1,
-            1
-          )
-        )
-      }
-      aria-label="Next month"
-    >
-      <ChevronRightIcon fontSize="small" />
-    </IconButton>
-  </Box>
-</Stack>
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={nextMonth}
+            aria-label="Next month"
+          >
+            <ChevronRightIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Stack>
 
       <Box
         sx={{
@@ -220,7 +204,7 @@ export default function CalendarSidebar({
             >
               {day}
             </Typography>
-          )
+          ),
         )}
 
         {cells.map((day, index) => {
@@ -233,7 +217,12 @@ export default function CalendarSidebar({
             )
           }
 
-          const date = new Date(year, month, day)
+          const date = new Date(
+            year,
+            month,
+            day,
+          )
+
           const key = dateKey(date)
 
           const selected = key === selectedKey
@@ -241,7 +230,10 @@ export default function CalendarSidebar({
 
           const selectedWeek =
             view === 'week' &&
-            isInSelectedWeek(date, selectedDate)
+            isInSelectedWeek(
+              date,
+              selectedDate,
+            )
 
           const meeting = hasMeeting(key)
 
