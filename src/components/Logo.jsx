@@ -16,7 +16,7 @@ export default function Logo() {
     >
       <Box
         component="img"
-        src={`${import.meta.env.BASE_URL}/images/avaada-logo.png`}
+        src={`${import.meta.env.BASE_URL}/images/Avaada Logo.png`}
         alt="Avaada logo"
         onError={(event) => {
           console.error('Failed to load Avaada logo:', event.currentTarget.src)
